@@ -13,7 +13,18 @@ void engineGame() {
     std::cout << "Let's start the game!\n";
     board.render();
 
-    while (!engine.isFinished(board)) {
+    while (1) {
+        std::pair<bool, endState> state = engine.isFinished(board);
+        if (state.first == true) {
+            std::cout << "Game Finished!";
+
+            if (state.second == endState::P1Win) std::cout << "You Win!\n";
+            else if (state.second == endState::P2Win) std::cout << "The Engine Wins!\n";
+            else std::cout << "The game ended in a Draw!\n";
+
+            break;
+        }
+
         if (board.getTurn() == Player::P1) {
             std::cout << "Please enter the cell you want to mark (1 - 9): ";
             std::cin >> markSq;
@@ -39,7 +50,17 @@ void twoPlayerGame() {
     std::cout << "Let's start the game!\n";
     board.render();
 
-    while (!engine.isFinished(board)) {
+    while (1) {
+        std::pair<bool, endState> state = engine.isFinished(board);
+        if (state.first == true) {
+            std::cout << "Game Finished!";
+
+            if (state.second == endState::P1Win) std::cout << "Player 1 Wins!\n";
+            else if (state.second == endState::P2Win) std::cout << "Player 2 Wins!\n";
+            else std::cout << "The game ended in a Draw!\n";
+
+            break;
+        }
         if (board.getTurn() == Player::P1) {
             std::cout << "Player 1's turn (O): ";
             std::cin >> markSq;
@@ -78,6 +99,8 @@ int main()
             else {
                 twoPlayerGame();
             }
+
+            std::cin.ignore(std::numeric_limits<std::streamsize>::max(), '\n');
         }
         else {
             std::cout << "Please enter 1 or 2 or 3 only!\n";

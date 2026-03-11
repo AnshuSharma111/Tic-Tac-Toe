@@ -1,13 +1,23 @@
 #include "Engine.h"
 
-bool Engine::isLeaf(const std::vector<char>& board) {
+std::pair<bool, endState> Engine::isLeaf(std::vector<char>& board) {
+	endState state = evaluate(board);
+
+	if (state == endState::P1Win || state == endState::P2Win) return { true, state };
+
+	bool isFull = true;
 	for (int i = 1; i <= BOARD_SIZE; i++) {
-		if (board[i - 1] == '.') return false;
+		if (board[i - 1] == '.') {
+			isFull = false; 
+			break;
+		}
 	}
-	return true;
+
+	if (isFull) return { true, endState::Draw };
+	return { false, state };
 }
 
-endState Engine::evaluate(const std::vector<char>& board) {
+endState Engine::evaluate(std::vector<char>& board) {
 	std::vector<std::vector<int>> winning_combs = {
 		{0, 1, 2}, // rows
 		{3, 4, 5},
@@ -27,87 +37,49 @@ endState Engine::evaluate(const std::vector<char>& board) {
 	return endState::Draw;
 }
 
-std::vector<std::vector<char>> Engine::children(const std::vector<char>& board, Player turn) {
-	// board is full, no children possible
-	if (isLeaf(board)) {
-		return {};
-	}
+std::pair<int, endState> Engine::bestChild(std::vector<char>& board, nodeType level, Player turn) {
+	// leaf node
+	std::pair<bool, endState> state = isLeaf(board);
+	if (state.first == true) return { -1, state.second };
 
-	// generate children
-	std::vector<std::vector<char>> childs;
-	for (int i = 1; i <= BOARD_SIZE; i++) {
-		if (board[i - 1] == '.') {
-			std::vector<char> child(9);
-			std::copy(board.begin(), board.end(), child.begin());
-			child[i - 1] = (turn == Player::P1) ? 'O' : 'X';
-			childs.push_back(child);
-		}
-	}
-
-	return childs;
-}
-
-std::pair<endState, std::vector<char>> Engine::bestChild(const std::vector<char>& board, nodeType level, Player turn) {
-	// Generate All Children
-	std::vector<std::vector<char>> next = children(board, turn);
-
-	// If this is a win state or a leaf state
-	if (evaluate(board) != endState::Draw || next.empty()) {
-		return { evaluate(board), board };
-	}
-
-	// alternate between MIN and MAX levels and turns
+	// next level parameters
 	nodeType nextLevel = (level == nodeType::MIN) ? nodeType::MAX : nodeType::MIN;
 	Player nextTurn = (turn == Player::P1) ? Player::P2 : Player::P1;
 
-	std::vector<std::pair<endState, std::vector<char>>> grandchildren;
+	// if we found a DRAW condition or a LOSE condition
+	int drawMove = -1;
+	int loseMove = -1;
 
-	for (auto const& child : next) {
-		std::pair<endState, std::vector<char>> bestGrandchild = bestChild(child, nextLevel, nextTurn);
-
-		if (bestGrandchild.first == endState::P1Win && level == nodeType::MIN) return { endState::P1Win, child };
-		if (bestGrandchild.first == endState::P2Win && level == nodeType::MAX) return { endState::P2Win, child };
-
-		grandchildren.push_back({bestGrandchild.first, child});
-	}
-
-	// we did not get a winning position, lets try for draw
-	for (auto const& grandchild : grandchildren) {
-		if (grandchild.first == endState::Draw) return grandchild;
-	}
-
-	// not even a draw is possible
-	return grandchildren[0];
-}
-
-int Engine::nextMove(const Board& boardObj) {
-	std::vector<char> board = boardObj.getBoard();
-	Player turn = boardObj.getTurn();
-
-	std::pair<endState, std::vector<char>> bestMove = bestChild(board, nodeType::MAX, turn);
-
-	for (int i = 1; i <= BOARD_SIZE; i++) {
-		if (board[i - 1] != bestMove.second[i - 1]) return i;
-	}
-
-	return -1;
-}
-
-bool Engine::isFinished(const Board& boardObj) {
-	// is full
-	bool isFull = true;
-	std::vector<char> board = boardObj.getBoard();
 	for (int i = 1; i <= BOARD_SIZE; i++) {
 		if (board[i - 1] == '.') {
-			isFull = false;
-			break;
+			board[i - 1] = (turn == Player::P1) ? 'O' : 'X';
+			auto res = bestChild(board, nextLevel, nextTurn);
+			board[i - 1] = '.';
+
+			endState eval = res.second;
+
+			if (level == nodeType::MIN && eval == endState::P1Win) return { i, endState::P1Win };
+			if (level == nodeType::MAX && eval == endState::P2Win) return { i, endState::P2Win };
+
+			if (drawMove == -1 && eval == endState::Draw) drawMove = i;
+			else if (loseMove == -1 && level == nodeType::MIN && eval == endState::P2Win) loseMove = i;
+			else if (loseMove == -1 && level == nodeType::MAX && eval == endState::P1Win) loseMove = i;
 		}
 	}
-	if (isFull) return true;
 
-	// is Won
-	endState boardState = evaluate(boardObj.getBoard());
-	bool isComplete = (boardState == endState::P1Win || boardState == endState::P2Win) ? true : false;
+	// return DRAW con if available
+	if (drawMove != -1) return { drawMove, endState::Draw };
+	// cannot WIN or DRAW from here :<
+	return { loseMove, (level == nodeType::MIN) ? endState::P2Win : endState::P1Win };
+}
 
-	return isComplete;
+int Engine::nextMove(Board& boardObj) {
+	std::vector<char> board = boardObj.getBoard();
+	std::pair<int, endState> move = bestChild(board, nodeType::MAX, Player::P2);
+	return move.first;
+}
+
+std::pair<bool, endState> Engine::isFinished(const Board& boardObj) {
+	std::vector<char> board = boardObj.getBoard();
+	return isLeaf(board);
 }

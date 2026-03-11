@@ -18,15 +18,14 @@ private:
 	static const int BOARD_SIZE = 9;
 
 	// Internal Functions
-	bool isLeaf(const std::vector<char>& board); // check whether board is a leaf node or not
-	endState evaluate(const std::vector<char>& board); // P1Win or P2Win or Draw
+	std::pair<bool, endState>  isLeaf(std::vector<char>& board); // check whether board is a leaf node or not
+	endState evaluate(std::vector<char>& board); // P1Win or P2Win or Draw
 
-	std::vector<std::vector<char>> children(const std::vector<char>& board, Player turn); // generate all children of current state
-	std::pair<endState, std::vector<char>> bestChild(const std::vector<char>& board, nodeType level, Player turn); // get best child possible
+	std::pair<int, endState> bestChild(std::vector<char>& board, nodeType level, Player turn); // get best move possible
 public:
 	// AI functions
-	int nextMove(const Board& boardObj); // the next move the AI should take
+	int nextMove(Board& boardObj); // the next move the AI should take
 
 	// Game Utility
-	bool isFinished(const Board& boardObj); // is the game complete?
+	std::pair<bool, endState> isFinished(const Board& boardObj); // is the game complete? And if yes, who won?
 };
