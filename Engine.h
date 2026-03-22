@@ -8,11 +8,6 @@ enum class endState {
 	Draw
 };
 
-enum class nodeType {
-	MIN,
-	MAX
-};
-
 class Engine {
 private:
 	static const int BOARD_SIZE = 9;
@@ -21,7 +16,7 @@ private:
 	std::pair<bool, endState>  isLeaf(std::vector<char>& board); // check whether board is a leaf node or not
 	endState evaluate(std::vector<char>& board); // P1Win or P2Win or Draw
 
-	std::pair<int, endState> bestChild(std::vector<char>& board, nodeType level, Player turn); // get best move possible
+	std::pair<int,int> minimaxChild(std::vector<char>& board, Player turn); // get best move possible
 public:
 	// AI functions
 	int nextMove(Board& boardObj); // the next move the AI should take

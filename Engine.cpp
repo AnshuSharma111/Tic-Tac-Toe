@@ -37,46 +37,54 @@ endState Engine::evaluate(std::vector<char>& board) {
 	return endState::Draw;
 }
 
-std::pair<int, endState> Engine::bestChild(std::vector<char>& board, nodeType level, Player turn) {
+std::pair<int,int> Engine::minimaxChild(std::vector<char>& board, Player turn) {
 	// leaf node
 	std::pair<bool, endState> state = isLeaf(board);
-	if (state.first == true) return { -1, state.second };
+	if (state.first == true) {
+		int score = 0;
+		if (state.second == endState::P1Win) score = 100;
+		if (state.second == endState::P2Win) score = -100;
+		return { -1, score };
+	}
 
-	// next level parameters
-	nodeType nextLevel = (level == nodeType::MIN) ? nodeType::MAX : nodeType::MIN;
+	// next level turn
 	Player nextTurn = (turn == Player::P1) ? Player::P2 : Player::P1;
-
-	// if we found a DRAW condition or a LOSE condition
-	int drawMove = -1;
-	int loseMove = -1;
+	std::pair<int,int> move = { -1, -1 };
 
 	for (int i = 1; i <= BOARD_SIZE; i++) {
 		if (board[i - 1] == '.') {
 			board[i - 1] = (turn == Player::P1) ? 'O' : 'X';
-			auto res = bestChild(board, nextLevel, nextTurn);
+			auto res = minimaxChild(board, nextTurn);
 			board[i - 1] = '.';
 
-			endState eval = res.second;
+			int score = res.second;
 
-			if (level == nodeType::MIN && eval == endState::P1Win) return { i, endState::P1Win };
-			if (level == nodeType::MAX && eval == endState::P2Win) return { i, endState::P2Win };
+			// decrease score for depth
+			if (score > 0) score -= 1;
+			else if (score < 0) score += 1;
 
-			if (drawMove == -1 && eval == endState::Draw) drawMove = i;
-			else if (loseMove == -1 && level == nodeType::MIN && eval == endState::P2Win) loseMove = i;
-			else if (loseMove == -1 && level == nodeType::MAX && eval == endState::P1Win) loseMove = i;
+			if (turn == Player::P1) { // MAX node
+				if (move.first == -1 || move.second < score) {
+					move.first = i;
+					move.second = score;
+				}
+			}
+			else { // MIN node
+				if (move.first == -1 || move.second > score) {
+					move.first = i;
+					move.second = score;
+				}
+			}
 		}
 	}
 
-	// return DRAW con if available
-	if (drawMove != -1) return { drawMove, endState::Draw };
-	// cannot WIN or DRAW from here :<
-	return { loseMove, (level == nodeType::MIN) ? endState::P2Win : endState::P1Win };
+	return move;
 }
 
 int Engine::nextMove(Board& boardObj) {
 	std::vector<char> board = boardObj.getBoard();
-	std::pair<int, endState> move = bestChild(board, nodeType::MAX, Player::P2);
-	return move.first;
+	std::pair<int, int> result = minimaxChild(board, Player::P2);
+	return result.first;
 }
 
 std::pair<bool, endState> Engine::isFinished(const Board& boardObj) {
