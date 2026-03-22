@@ -1,23 +1,6 @@
 #include "Engine.h"
 
-std::pair<bool, endState> Engine::isLeaf(std::vector<char>& board) {
-	endState state = evaluate(board);
-
-	if (state == endState::P1Win || state == endState::P2Win) return { true, state };
-
-	bool isFull = true;
-	for (int i = 1; i <= BOARD_SIZE; i++) {
-		if (board[i - 1] == '.') {
-			isFull = false; 
-			break;
-		}
-	}
-
-	if (isFull) return { true, endState::Draw };
-	return { false, state };
-}
-
-endState Engine::evaluate(std::vector<char>& board) {
+state Engine::evaluate(std::vector<char>& board) {
 	std::vector<std::vector<int>> winning_combs = {
 		{0, 1, 2}, // rows
 		{3, 4, 5},
@@ -30,31 +13,41 @@ endState Engine::evaluate(std::vector<char>& board) {
 	};
 
 	for (const auto& comb : winning_combs) {
-		if (board[comb[0]] == 'O' && board[comb[1]] == 'O' && board[comb[2]] == 'O') return endState::P1Win;
-		if (board[comb[0]] == 'X' && board[comb[1]] == 'X' && board[comb[2]] == 'X') return endState::P2Win;
+		if (board[comb[0]] == 'O' && board[comb[1]] == 'O' && board[comb[2]] == 'O') return state::P1Win;
+		if (board[comb[0]] == 'X' && board[comb[1]] == 'X' && board[comb[2]] == 'X') return state::P2Win;
 	}
 
-	return endState::Draw;
+	for (int i = 1; i <= BOARD_SIZE; i++) {
+		if (board[i - 1] == '.') return state::Ongoing;
+	}
+
+	return state::Draw;
 }
 
-std::pair<int,int> Engine::minimaxChild(std::vector<char>& board, Player turn) {
+std::pair<int,int> Engine::minimaxChild(std::vector<char>& board, Player turn, int alpha, int beta) {
 	// leaf node
-	std::pair<bool, endState> state = isLeaf(board);
-	if (state.first == true) {
+	state boardState = evaluate(board);
+	if (boardState != state::Ongoing) {
 		int score = 0;
-		if (state.second == endState::P1Win) score = 100;
-		if (state.second == endState::P2Win) score = -100;
+		if (boardState == state::P1Win) score = 100;
+		if (boardState == state::P2Win) score = -100;
 		return { -1, score };
 	}
 
-	// next level turn
+	// who will move next?
 	Player nextTurn = (turn == Player::P1) ? Player::P2 : Player::P1;
+	// current char
+	char cur = (turn == Player::P1) ? 'O' : 'X';
+
+	// result storing variable
 	std::pair<int,int> move = { -1, -1 };
 
 	for (int i = 1; i <= BOARD_SIZE; i++) {
 		if (board[i - 1] == '.') {
-			board[i - 1] = (turn == Player::P1) ? 'O' : 'X';
-			auto res = minimaxChild(board, nextTurn);
+			if (alpha >= beta) break;
+
+			board[i - 1] = cur;
+			auto res = minimaxChild(board, nextTurn, alpha, beta);
 			board[i - 1] = '.';
 
 			int score = res.second;
@@ -68,12 +61,16 @@ std::pair<int,int> Engine::minimaxChild(std::vector<char>& board, Player turn) {
 					move.first = i;
 					move.second = score;
 				}
+
+				alpha = std::max(alpha, score);
 			}
 			else { // MIN node
 				if (move.first == -1 || move.second > score) {
 					move.first = i;
 					move.second = score;
 				}
+
+				beta = std::min(beta, score);
 			}
 		}
 	}
@@ -83,11 +80,12 @@ std::pair<int,int> Engine::minimaxChild(std::vector<char>& board, Player turn) {
 
 int Engine::nextMove(Board& boardObj) {
 	std::vector<char> board = boardObj.getBoard();
-	std::pair<int, int> result = minimaxChild(board, Player::P2);
+	std::pair<int, int> result = minimaxChild(board, Player::P2, std::numeric_limits<int>::min(), std::numeric_limits<int>::max());
 	return result.first;
 }
 
-std::pair<bool, endState> Engine::isFinished(const Board& boardObj) {
+state Engine::gameState(const Board& boardObj) {
 	std::vector<char> board = boardObj.getBoard();
-	return isLeaf(board);
+	state boardState = evaluate(board);
+	return boardState;
 }

@@ -14,12 +14,12 @@ void engineGame() {
     board.render();
 
     while (1) {
-        std::pair<bool, endState> state = engine.isFinished(board);
-        if (state.first == true) {
+        state current = engine.gameState(board);
+        if (current != state::Ongoing) {
             std::cout << "Game Finished!";
 
-            if (state.second == endState::P1Win) std::cout << "You Win!\n";
-            else if (state.second == endState::P2Win) std::cout << "The Engine Wins!\n";
+            if (current == state::P1Win) std::cout << "You Win!\n";
+            else if (current == state::P2Win) std::cout << "The Engine Wins!\n";
             else std::cout << "The game ended in a Draw!\n";
 
             break;
@@ -51,12 +51,12 @@ void twoPlayerGame() {
     board.render();
 
     while (1) {
-        std::pair<bool, endState> state = engine.isFinished(board);
-        if (state.first == true) {
+        state current = engine.gameState(board);
+        if (current != state::Ongoing) {
             std::cout << "Game Finished!";
 
-            if (state.second == endState::P1Win) std::cout << "Player 1 Wins!\n";
-            else if (state.second == endState::P2Win) std::cout << "Player 2 Wins!\n";
+            if (current == state::P1Win) std::cout << "Player 1 Wins!\n";
+            else if (current == state::P2Win) std::cout << "Player 2 Wins!\n";
             else std::cout << "The game ended in a Draw!\n";
 
             break;

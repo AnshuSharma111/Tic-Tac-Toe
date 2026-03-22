@@ -1,4 +1,7 @@
-﻿  Tic-Tac-Toe.cpp
+﻿  Board.cpp
+  Engine.cpp
+  Tic-Tac-Toe.cpp
+  Generating Code...
   Tic-Tac-Toe.vcxproj -> D:\Tic-Tac-Toe\x64\Debug\Tic-Tac-Toe.exe
   'pwsh.exe' is not recognized as an internal or external command,
   operable program or batch file.

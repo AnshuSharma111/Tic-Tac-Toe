@@ -1,8 +1,10 @@
 #pragma once
 #include <vector>
+#include <limits>
 #include "Board.h"
 
-enum class endState {
+enum class state {
+	Ongoing,
 	P1Win,
 	P2Win,
 	Draw
@@ -13,14 +15,12 @@ private:
 	static const int BOARD_SIZE = 9;
 
 	// Internal Functions
-	std::pair<bool, endState>  isLeaf(std::vector<char>& board); // check whether board is a leaf node or not
-	endState evaluate(std::vector<char>& board); // P1Win or P2Win or Draw
-
-	std::pair<int,int> minimaxChild(std::vector<char>& board, Player turn); // get best move possible
+	state evaluate(std::vector<char>& board); // P1Win or P2Win or Draw or Ongoing
+	std::pair<int,int> minimaxChild(std::vector<char>& board, Player turn, int alpha, int beta); // get best move possible
 public:
 	// AI functions
 	int nextMove(Board& boardObj); // the next move the AI should take
 
 	// Game Utility
-	std::pair<bool, endState> isFinished(const Board& boardObj); // is the game complete? And if yes, who won?
+	state gameState(const Board& boardObj); // What is the current state of the game?
 };
